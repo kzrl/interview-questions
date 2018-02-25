@@ -6,13 +6,6 @@ import (
 
 )
 
-func TestInterface(t *testing.T) {
-	pool := New(1)
-	_, ok := pool.(ConnectionPool)
-	if !ok {
-		t.Error("Expected to satisfy ConnectionPool interface")
-	}
-}
 
 // Simple pool of 1 connection
 func TestBasic(t *testing.T) {
