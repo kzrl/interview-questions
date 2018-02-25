@@ -1,6 +1,9 @@
 package connpool
 
-import ("fmt")
+import (
+	"fmt"
+	"sync"
+)
 
 const numConnections = 10
 
@@ -10,14 +13,18 @@ type Connection interface {
 }
 
 type ConnectionPool interface {
-	getConnection() (Connection, error)
+	GetConnection() (Connection, error)
 }
 
 type MyConnection struct {
-
+	pool *MyConnectionPool
+	num  int
 }
 
 func (m *MyConnection) Close() error {
+	m.pool.mux.Lock()
+	m.pool.used[m.num] = false //mark this connection as available
+	m.pool.mux.Unlock()
 	return nil
 }
 
@@ -26,26 +33,39 @@ func (m *MyConnection) Execute() error {
 }
 
 type MyConnectionPool struct {
-	connections []MyConnection //Perhaps should be Connection
-	used []bool
+	connections []MyConnection
+	used        []bool
+	mux         sync.Mutex //Ensure only a single goroutine can modify the slices
 }
 
-func (p *MyConnectionPool) GetConnection() (Connection, error){
+func (p *MyConnectionPool) GetConnection() (Connection, error) {
+	available := false
+	var newConn Connection
 
+	p.mux.Lock()
 	for i, c := range p.connections {
-		if p.used[i] == false { 
+
+		if p.used[i] == false {
+			c.pool = p
 			p.used[i] = true
-			return &c, nil
+			c.num = i
+			newConn = &c
+			available = true
+			break
 		}
-		//fmt.Printf("%d %t\n", i, p.used[i])
 	}
-	
-	return nil, fmt.Errorf("No connections available")
+	p.mux.Unlock()
+
+	if available {
+		return newConn, nil
+	}
+
+	return nil, fmt.Errorf("no connections available")
 }
 
-func New() MyConnectionPool {
+func New(numConnections int) ConnectionPool {
 	var p MyConnectionPool
 	p.connections = make([]MyConnection, numConnections)
 	p.used = make([]bool, numConnections)
-	return p
+	return &p
 }
