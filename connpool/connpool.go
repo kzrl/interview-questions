@@ -5,11 +5,9 @@ import (
 	"sync"
 )
 
-const numConnections = 10
-
 type Connection interface {
 	Close() error
-	Execute() error
+	Execute(query string) error
 }
 
 type ConnectionPool interface {
@@ -31,13 +29,13 @@ func (m *MyConnection) Close() error {
 }
 
 // Execute does not actually do anything in this example
-func (m *MyConnection) Execute() error {
+func (m *MyConnection) Execute(query string) error {
 	return nil
 }
 
 // MyConnectionPool implements ConnectionPool
 type MyConnectionPool struct {
-	connections []MyConnection
+	connections []Connection
 	used        []bool
 	mux         sync.Mutex //Ensure only a single goroutine can modify the slices
 }
@@ -70,12 +68,12 @@ func (p *MyConnectionPool) GetConnection() (Connection, error) {
 	return nil, fmt.Errorf("no connections available")
 }
 
-
 // New creates a new MyConnectionPool with the specified number of connections
 // Deviates from the python example, accepting an int rather than a slice
-func New(numConnections int) MyConnectionPool {
-	var p MyConnectionPool
-	p.connections = make([]MyConnection, numConnections)
-	p.used = make([]bool, numConnections)
-	return p
+func New(conns []Connection) *MyConnectionPool {
+	// TODO: what do we do with the connections to make this work?
+	return &MyConnectionPool{
+		connections: ?,
+		used:        make([]bool, len(conns)),
+	}
 }
