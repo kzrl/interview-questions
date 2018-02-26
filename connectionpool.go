@@ -90,7 +90,7 @@ func isConnectionPool(p connpool.ConnectionPool) {
 	return
 }
 
-// A pointless function to demonstrate my implementation satisfies the interfac
+// A pointless function to demonstrate my implementation satisfies the interface
 func isConnection(c connpool.Connection) {
 	c.Execute("A query")
 	c.Close()
