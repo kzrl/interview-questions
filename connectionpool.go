@@ -2,14 +2,31 @@ package main
 
 import (
 	"fmt"
-	"github.com/kzrl/interview-questions/connpool"
 	"sync"
+
+	"github.com/kzrl/interview-questions/connpool"
 )
 
-func main() {
+// SomeBackendConnector implements connpool.Connection for some kind of backend.
+type SomeBackendConnector struct{}
 
+func (c *SomeBackendConnector) Close() error {
+	fmt.Println("I really closed the connection here")
+	return nil
+}
+
+func (c *SomeBackendConnector) Execute(query string) error {
+	fmt.Println("Executed query: ", query)
+	return nil
+}
+
+func main() {
 	fmt.Println("Creating a pool of 10 connections")
-	pool := connpool.New(10)
+	conns := make([]*SomeBackendConnector, 10)
+	for i := 0; i < 10; i++ {
+		conns[i] = &SomeBackendConnector{}
+	}
+	pool := connpool.New(conns)
 
 	fmt.Println("Try to get 20 connections")
 	for i := 0; i < 20; i++ {
@@ -25,7 +42,7 @@ func main() {
 
 	fmt.Println("Try to get 20 connections in goroutines")
 	var wg sync.WaitGroup
-	for i := 0; i< 20; i++ {
+	for i := 0; i < 20; i++ {
 		wg.Add(1)
 		go func(j int) {
 			_, err := pool.GetConnection()
