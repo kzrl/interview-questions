@@ -23,20 +23,22 @@ func main() {
 	var _ connpool.Connection = &SomeBackendConnector{}
 	
 	fmt.Println("Creating a pool of 10 connections")
-	conns := make([]*SomeBackendConnector, 10)
+	conns := make([]connpool.Connection, 10)
 	for i := 0; i < 10; i++ {
 		conns[i] = &SomeBackendConnector{}
-		isConnection(&SomeBackendConnector{})
+		//isConnection(&SomeBackendConnector{})
 	}
 	pool := connpool.New(conns)
 
 	fmt.Println("Try to get 20 connections")
 	for i := 0; i < 20; i++ {
-		_, err := pool.GetConnection()
+		c, err := pool.GetConnection()
 		if err != nil {
 			fmt.Printf("%d %s\n", i, err)
 			continue
 		}
+		c.Execute("SELECT * FROM users;")
+		c.Close()
 	}
 
 	fmt.Println("Create a new pool of 15 connections")

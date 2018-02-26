@@ -29,9 +29,21 @@ func (m *MyConnection) Close() error {
 	return nil
 }
 
-// Execute does not actually do anything in this example
+func (m *MyConnection) IsClosed() bool {
+	m.pool.mux.Lock()
+	closed := !m.pool.used[m.num]
+	m.pool.mux.Unlock()
+	return closed
+}
+
+
+// Execute method is actually implemented on the embedded Connection.
+// Only calling it here for clarity
 func (m *MyConnection) Execute(query string) error {
-	return nil
+	if m.IsClosed() {
+		return fmt.Errorf("connection is closed")
+	}
+	return m.Connection.Execute(query)
 }
 
 // MyConnectionPool implements ConnectionPool
@@ -70,12 +82,12 @@ func (p *MyConnectionPool) GetConnection() (Connection, error) {
 }
 
 // New creates a new MyConnectionPool with the given []Connection
-func New(conns []*Connection) *MyConnectionPool {
+func New(conns []Connection) *MyConnectionPool {
 	fmt.Println(len(conns))
 	// TODO: what do we do with the connections to make this work?
 	myConnections := make([]MyConnection, len(conns))
 	for i, val := range conns {
-		myConnections[i].Connection = *val
+		myConnections[i].Connection = val
 	}
 	
 	return &MyConnectionPool{
