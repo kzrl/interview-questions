@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"sync"
 	"github.com/kzrl/interview-questions/connpool"
+	"os"
+	"sync"
 )
 
 // SomeBackendConnector implements connpool.Connection for some kind of backend.
@@ -20,13 +21,13 @@ func (c *SomeBackendConnector) Execute(query string) error {
 }
 
 func main() {
+	// confirm SomeBackendConnector satisfies Connection interface
 	var _ connpool.Connection = &SomeBackendConnector{}
-	
+
 	fmt.Println("Creating a pool of 10 connections")
 	conns := make([]connpool.Connection, 10)
 	for i := 0; i < 10; i++ {
 		conns[i] = &SomeBackendConnector{}
-		//isConnection(&SomeBackendConnector{})
 	}
 	pool := connpool.New(conns)
 
@@ -37,8 +38,12 @@ func main() {
 			fmt.Printf("%d %s\n", i, err)
 			continue
 		}
-		c.Execute("SELECT * FROM users;")
-		c.Close()
+
+		err = c.Execute("SELECT * FROM users;")
+		if err != nil {
+			fmt.Println(err)
+		}
+
 	}
 
 	fmt.Println("Create a new pool of 15 connections")
@@ -57,8 +62,20 @@ func main() {
 		}(i)
 	}
 	wg.Wait()
-	fmt.Println("DONE")
-	isConnectionPool(pool)
+	fmt.Println("Done with goroutines")
+
+	fmt.Println("Get a connection, close it and try to execute")
+	pool = connpool.New(conns)
+	c, err := pool.GetConnection()
+	if err != nil {
+		fmt.Println("Unable to get connection")
+		os.Exit(1)
+	}
+	c.Close() //ignoring error
+	err = c.Execute("This query should fail")
+	if err != nil {
+		fmt.Printf("Query failed: %s\n", err)
+	}
 
 }
 

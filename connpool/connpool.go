@@ -29,6 +29,7 @@ func (m *MyConnection) Close() error {
 	return nil
 }
 
+// Check if this connection is closed or not
 func (m *MyConnection) IsClosed() bool {
 	m.pool.mux.Lock()
 	closed := !m.pool.used[m.num]
@@ -36,9 +37,8 @@ func (m *MyConnection) IsClosed() bool {
 	return closed
 }
 
-
 // Execute method is actually implemented on the embedded Connection.
-// Only calling it here for clarity
+// Calling it here to check if the connection is already closed
 func (m *MyConnection) Execute(query string) error {
 	if m.IsClosed() {
 		return fmt.Errorf("connection is closed")
@@ -83,13 +83,14 @@ func (p *MyConnectionPool) GetConnection() (Connection, error) {
 
 // New creates a new MyConnectionPool with the given []Connection
 func New(conns []Connection) *MyConnectionPool {
-	fmt.Println(len(conns))
-	// TODO: what do we do with the connections to make this work?
+	// Make a slice of MyConnections
 	myConnections := make([]MyConnection, len(conns))
+
+	// Copy each passed Connection in conns to the new slice
 	for i, val := range conns {
 		myConnections[i].Connection = val
 	}
-	
+
 	return &MyConnectionPool{
 		connections: myConnections,
 		used:        make([]bool, len(conns)),
