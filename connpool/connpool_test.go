@@ -54,3 +54,7 @@ func TestConcurrentConnections(t *testing.T) {
 	}
 	
 }
+
+func TestUseAfterClose(t *testing.T) {
+	pool := New(
+}

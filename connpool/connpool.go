@@ -14,8 +14,9 @@ type ConnectionPool interface {
 	GetConnection() (Connection, error)
 }
 
-// MyConnection implements Connection
+// MyConnection embeds a Connection
 type MyConnection struct {
+	Connection
 	pool *MyConnectionPool
 	num  int
 }
@@ -35,7 +36,7 @@ func (m *MyConnection) Execute(query string) error {
 
 // MyConnectionPool implements ConnectionPool
 type MyConnectionPool struct {
-	connections []Connection
+	connections []MyConnection
 	used        []bool
 	mux         sync.Mutex //Ensure only a single goroutine can modify the slices
 }
@@ -68,12 +69,17 @@ func (p *MyConnectionPool) GetConnection() (Connection, error) {
 	return nil, fmt.Errorf("no connections available")
 }
 
-// New creates a new MyConnectionPool with the specified number of connections
-// Deviates from the python example, accepting an int rather than a slice
-func New(conns []Connection) *MyConnectionPool {
+// New creates a new MyConnectionPool with the given []Connection
+func New(conns []*Connection) *MyConnectionPool {
+	fmt.Println(len(conns))
 	// TODO: what do we do with the connections to make this work?
+	myConnections := make([]MyConnection, len(conns))
+	for i, val := range conns {
+		myConnections[i].Connection = *val
+	}
+	
 	return &MyConnectionPool{
-		connections: ?,
+		connections: myConnections,
 		used:        make([]bool, len(conns)),
 	}
 }

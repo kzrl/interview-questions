@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"sync"
-
 	"github.com/kzrl/interview-questions/connpool"
 )
 
@@ -21,10 +20,13 @@ func (c *SomeBackendConnector) Execute(query string) error {
 }
 
 func main() {
+	var _ connpool.Connection = &SomeBackendConnector{}
+	
 	fmt.Println("Creating a pool of 10 connections")
 	conns := make([]*SomeBackendConnector, 10)
 	for i := 0; i < 10; i++ {
 		conns[i] = &SomeBackendConnector{}
+		isConnection(&SomeBackendConnector{})
 	}
 	pool := connpool.New(conns)
 
@@ -38,7 +40,7 @@ func main() {
 	}
 
 	fmt.Println("Create a new pool of 15 connections")
-	pool = connpool.New(10)
+	pool = connpool.New(conns)
 
 	fmt.Println("Try to get 20 connections in goroutines")
 	var wg sync.WaitGroup
@@ -54,7 +56,8 @@ func main() {
 	}
 	wg.Wait()
 	fmt.Println("DONE")
-	isConnectionPool(&pool)
+	isConnectionPool(pool)
+
 }
 
 // A pointless function to demonstrate my implementation satisfies the interface
@@ -70,6 +73,6 @@ func isConnectionPool(p connpool.ConnectionPool) {
 
 // A pointless function to demonstrate my implementation satisfies the interfac
 func isConnection(c connpool.Connection) {
-	c.Execute()
+	c.Execute("A query")
 	c.Close()
 }
