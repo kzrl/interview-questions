@@ -94,3 +94,27 @@ func TestUseAfterClose(t *testing.T) {
 		t.Error("Should not be allowed to Execute() after Closing the connection")
 	}
 }
+
+func TestReuseConnection(t *testing.T) {
+	conns := getConnections(1)
+	pool := New(conns)
+	c, err := pool.GetConnection()
+	if err != nil {
+		t.Error("Failed to get connection")
+	}
+	c.Close()
+	err = c.Execute("This should fail")
+	if err == nil {
+		t.Error("Should not be allowed to Execute() after Closing the connection")
+	}
+
+	c2, err := pool.GetConnection()
+	if err != nil {
+		t.Error("Failed to get connection for reuse")
+	}
+
+	err = c2.Execute("This should work")
+	if err != nil {
+		t.Error("Should be able to reuse connection")
+	}
+}
