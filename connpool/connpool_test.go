@@ -99,9 +99,11 @@ func TestReuseConnection(t *testing.T) {
 	conns := getConnections(1)
 	pool := New(conns)
 	c, err := pool.GetConnection()
+
 	if err != nil {
 		t.Error("Failed to get connection")
 	}
+
 	c.Close()
 	err = c.Execute("This should fail")
 	if err == nil {
@@ -109,6 +111,7 @@ func TestReuseConnection(t *testing.T) {
 	}
 
 	c2, err := pool.GetConnection()
+
 	if err != nil {
 		t.Error("Failed to get connection for reuse")
 	}
@@ -117,4 +120,10 @@ func TestReuseConnection(t *testing.T) {
 	if err != nil {
 		t.Error("Should be able to reuse connection")
 	}
+
+	err = c.Execute("This should no longer work")
+	if err == nil {
+		t.Error("Should not be able to execute after closing")
+	}
+
 }

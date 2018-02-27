@@ -17,24 +17,35 @@ type ConnectionPool interface {
 // MyConnection embeds a Connection
 type MyConnection struct {
 	Connection
-	pool *MyConnectionPool
-	num  int
+	pool   *MyConnectionPool
+	num    int
+	closed bool
 }
 
 // Close returns a connection to the pool, rather than closing the connection
 func (m *MyConnection) Close() error {
 	m.pool.mux.Lock()
-	m.pool.used[m.num] = false //mark this connection as available
+
+	// Create a new MyConnection
+	var newconn MyConnection
+	newconn.pool = m.pool
+	newconn.num = m.num
+	newconn.closed = false
+	newconn.Connection = m.Connection //copy the old embedded Connection
+
+	m.pool.connections[m.num] = newconn // replace the connection
+
+	//This old connection is now closed forever
+	m.closed = true
+
+	m.pool.used[m.num] = false //mark the new connection as available
 	m.pool.mux.Unlock()
 	return nil
 }
 
-// Check if this connection is closed or not
+// Check if this connection is closed
 func (m *MyConnection) IsClosed() bool {
-	m.pool.mux.Lock()
-	closed := !m.pool.used[m.num]
-	m.pool.mux.Unlock()
-	return closed
+	return m.closed
 }
 
 // Execute method is actually implemented on the embedded Connection.
